@@ -8,54 +8,17 @@ import { Progress } from "@/components/ui/progress";
 const MODEL_PATH = "/models/pose_landmarker_full.task";
 
 const POSE_CONNECTIONS = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 7],
-  [0, 4],
-  [4, 5],
-  [5, 6],
-  [6, 8],
-  [9, 10],
-  [11, 12],
-  [11, 13],
-  [13, 15],
-  [15, 17],
-  [15, 19],
-  [15, 21],
-  [17, 19],
-  [12, 14],
-  [14, 16],
-  [16, 18],
-  [16, 20],
-  [16, 22],
-  [18, 20],
-  [11, 23],
-  [12, 24],
-  [23, 24],
-  [23, 25],
-  [24, 26],
-  [25, 27],
-  [26, 28],
-  [27, 29],
-  [28, 30],
-  [29, 31],
-  [30, 32],
-  [27, 31],
-  [28, 32],
+  [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], [9, 10],
+  [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
+  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], [11, 23],
+  [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28], [27, 29],
+  [28, 30], [29, 31], [30, 32], [27, 31], [28, 32],
 ];
-
-type LandmarkPoint = {
-  x: number;
-  y: number;
-};
 
 export default function PoseDetection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [poseLandmarker, setPoseLandmarker] = useState<PoseLandmarker | null>(
-    null
-  );
+  const [poseLandmarker, setPoseLandmarker] = useState<PoseLandmarker | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [angle, setAngle] = useState(30);
 
@@ -77,12 +40,12 @@ export default function PoseDetection() {
 
       if (videoRef.current) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
               width: { ideal: 640 },
               height: { ideal: 480 },
-              aspectRatio: 4 / 3,
-            },
+              aspectRatio: 4/3 
+            } 
           });
           videoRef.current.srcObject = stream;
         } catch (error) {
@@ -94,19 +57,14 @@ export default function PoseDetection() {
     initializePoseLandmarker();
 
     return () => {
-      const video = videoRef.current;
-      if (video && video.srcObject) {
-        const tracks = (video.srcObject as MediaStream).getTracks();
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
         tracks.forEach((track) => track.stop());
       }
     };
   }, []);
 
-  const calculateAngle = (
-    pointA: LandmarkPoint,
-    pointB: LandmarkPoint,
-    pointC: LandmarkPoint
-  ): number => {
+  const calculateAngle = (pointA: any, pointB: any, pointC: any) => {
     const ABx = pointA.x - pointB.x;
     const ABy = pointA.y - pointB.y;
     const BCx = pointC.x - pointB.x;
@@ -120,21 +78,74 @@ export default function PoseDetection() {
     return (angleRad * 180) / Math.PI;
   };
 
-  useEffect(() => {
-    const frameHandler = async () => {
-      if (
-        poseLandmarker &&
-        videoRef.current &&
-        canvasRef.current &&
-        isVideoReady
-      ) {
-        // Handle video frame processing
-      }
-      requestAnimationFrame(frameHandler);
-    };
+  const handleVideoFrame = async () => {
+    if (poseLandmarker && videoRef.current && canvasRef.current && isVideoReady) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const canvasCtx = canvas.getContext("2d");
 
+      if (canvasCtx) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const poseResults = await poseLandmarker.detectForVideo(video, performance.now());
+
+        if (poseResults.landmarks) {
+          poseResults.landmarks.forEach((pose) => {
+            const shoulder = pose[11]; // Change to 12 for right side
+            const elbow = pose[13]; // Change to 14 for right side
+            const wrist = pose[15]; // Change to 16 for right side
+
+            const angle = calculateAngle(shoulder, elbow, wrist);
+            setAngle(Math.round(Math.max(30, Math.min(120, angle))));
+
+            // Draw landmarks with numbers
+            pose.forEach((landmark, index) => {
+              canvasCtx.fillStyle = "red";
+              canvasCtx.beginPath();
+              canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 5, 0, 2 * Math.PI);
+              canvasCtx.fill();
+
+              canvasCtx.fillStyle = "yellow";
+              canvasCtx.font = "12px Arial";
+              canvasCtx.fillText(`${index}`, landmark.x * canvas.width + 6, landmark.y * canvas.height - 6);
+            });
+
+            // Draw connections
+            POSE_CONNECTIONS.forEach(([start, end]) => {
+              const startLandmark = pose[start];
+              const endLandmark = pose[end];
+              if (startLandmark && endLandmark) {
+                canvasCtx.strokeStyle = "white";
+                canvasCtx.lineWidth = 2;
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+                canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+                canvasCtx.stroke();
+              }
+            });
+          });
+        }
+      }
+    }
+
+    requestAnimationFrame(handleVideoFrame);
+  };
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.onloadedmetadata = () => {
+        setIsVideoReady(true);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
     if (isVideoReady && poseLandmarker) {
-      requestAnimationFrame(frameHandler);
+      requestAnimationFrame(handleVideoFrame);
     }
   }, [isVideoReady, poseLandmarker]);
 
@@ -147,8 +158,7 @@ export default function PoseDetection() {
             <CardTitle>Video Feed</CardTitle>
           </CardHeader>
           <CardContent>
-            
-            <div className="relative" style={{ aspectRatio: "4/3" }}>
+            <div className="relative" style={{ aspectRatio: '4/3' }}>
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover rounded-lg"
