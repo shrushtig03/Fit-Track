@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import clsx from 'clsx';
 
 const MODEL_PATH = "/models/pose_landmarker_full.task";
 
@@ -15,12 +15,14 @@ const POSE_CONNECTIONS = [
   [28, 30], [29, 31], [30, 32], [27, 31], [28, 32],
 ];
 
+const TOTAL_BLOCKS = 18; // One block per 10 degrees
+
 export default function PoseDetection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poseLandmarker, setPoseLandmarker] = useState<PoseLandmarker | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const [angle, setAngle] = useState(30);
+  const [angle, setAngle] = useState(180);
 
   useEffect(() => {
     const initializePoseLandmarker = async () => {
@@ -95,12 +97,12 @@ export default function PoseDetection() {
 
         if (poseResults.landmarks) {
           poseResults.landmarks.forEach((pose) => {
-            const shoulder = pose[11]; // Change to 12 for right side
-            const elbow = pose[13]; // Change to 14 for right side
-            const wrist = pose[15]; // Change to 16 for right side
+            const shoulder = pose[12]; // Right shoulder
+            const elbow = pose[14]; // Right elbow
+            const wrist = pose[16]; // Right wrist
 
             const angle = calculateAngle(shoulder, elbow, wrist);
-            setAngle(Math.round(Math.max(30, Math.min(120, angle))));
+            setAngle(Math.round(Math.max(0, Math.min(180, angle))));
 
             // Draw landmarks with numbers
             pose.forEach((landmark, index) => {
@@ -114,17 +116,45 @@ export default function PoseDetection() {
               canvasCtx.fillText(`${index}`, landmark.x * canvas.width + 6, landmark.y * canvas.height - 6);
             });
 
-            // Draw connections
-            POSE_CONNECTIONS.forEach(([start, end]) => {
+            // Draw arm lines according to progress bar colors
+            const drawArmLine = (start: number, end: number, color: string) => {
               const startLandmark = pose[start];
               const endLandmark = pose[end];
               if (startLandmark && endLandmark) {
-                canvasCtx.strokeStyle = "white";
-                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = color;
+                canvasCtx.lineWidth = 4;
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
                 canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
                 canvasCtx.stroke();
+              }
+            };
+
+            const getLineColor = (angle: number) => {
+              if (angle > 120 || angle < 45) return "blue";
+              if (angle >= 60 && angle <= 120) return "yellow";
+              return "green";
+            };
+
+            drawArmLine(12, 14, getLineColor(angle)); // Shoulder to elbow
+            drawArmLine(14, 16, getLineColor(angle)); // Elbow to wrist
+
+            // Draw other connections
+            POSE_CONNECTIONS.forEach(([start, end]) => {
+              if (
+                (start !== 12 || end !== 14) && // Not shoulder to elbow
+                (start !== 14 || end !== 16) // Not elbow to wrist
+              ) {
+                const startLandmark = pose[start];
+                const endLandmark = pose[end];
+                if (startLandmark && endLandmark) {
+                  canvasCtx.strokeStyle = "white";
+                  canvasCtx.lineWidth = 6;
+                  canvasCtx.beginPath();
+                  canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+                  canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+                  canvasCtx.stroke();
+                }
               }
             });
           });
@@ -148,6 +178,13 @@ export default function PoseDetection() {
       requestAnimationFrame(handleVideoFrame);
     }
   }, [isVideoReady, poseLandmarker]);
+
+  const getBlockColor = (blockIndex: number) => {
+    const blockAngle = (blockIndex + 1) * 10;
+    if (blockAngle > 120 || blockAngle <= 45) return "bg-blue-500";
+    if (blockAngle > 60 && blockAngle <= 120) return "bg-yellow-500";
+    return "bg-green-500";
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -179,9 +216,19 @@ export default function PoseDetection() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-2 text-center">{angle}°</div>
-            <Progress value={angle - 30} max={90} className="w-full h-4" />
+            <div className="flex justify-between w-full h-8 bg-secondary rounded-full overflow-hidden">
+              {Array.from({ length: TOTAL_BLOCKS }).map((_, index) => (
+                <div
+                  key={index}
+                  className={clsx(
+                    "w-full h-full transition-all duration-300 ease-in-out border-r border-secondary last:border-r-0",
+                    index < Math.floor(angle / 10) ? getBlockColor(index) : "bg-secondary"
+                  )}
+                />
+              ))}
+            </div>
             <p className="mt-2 text-sm text-muted-foreground text-center">
-              Range: 30° (arm extended) to 120° (fully curled)
+              Range: 0° (fully curled) to 180° (arm extended)
             </p>
           </CardContent>
         </Card>
