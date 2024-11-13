@@ -1,6 +1,7 @@
-import { ArrowRight, HeartPulse } from "lucide-react";
+import {  HeartPulse, LogIn } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./ui/button";
+import { ThemeToggle } from "./ThemeChangerButton";
 
 export default function TopBar() {
   return (
@@ -14,21 +15,21 @@ export default function TopBar() {
         </Link>
 
         <div className="flex items-center gap-8">
-          <nav className="hidden md:flex items-center space-x-4">
+          <nav className="flex items-center space-x-4">
             <Link
-              className="text-sm font-medium hover:underline underline-offset-4"
+              className="hidden md:flex text-sm font-medium hover:underline underline-offset-4"
               href="/dashboard"
             >
               Dashboard
             </Link>
             <Link
-              className="text-sm font-medium hover:underline underline-offset-4"
+              className="hidden md:flex text-sm font-medium hover:underline underline-offset-4"
               href="/#features"
             >
               Features
             </Link>
             <Link
-              className="text-sm font-medium hover:underline underline-offset-4"
+              className="hidden md:flex text-sm font-medium hover:underline underline-offset-4"
               href="/contact"
             >
               Contact
@@ -37,8 +38,9 @@ export default function TopBar() {
               <div className="my-auto">
                 SignIn
               </div>
-              <ArrowRight className="w-5 h-5 my-auto" />
+              <LogIn className="w-5 h-5 my-auto hidden md:flex" />
             </Button>
+            <ThemeToggle/>
           </nav>
 
         </div>

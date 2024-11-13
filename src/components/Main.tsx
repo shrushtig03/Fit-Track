@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { Github, MoveRight } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function Main() {
@@ -8,15 +8,15 @@ export function Main() {
 
                 <div className="flex md:p-5 my-auto flex-col w-full gap-3">
                     <div className="flex justify-center">
-                        <span className="text-md flex flex-row justify-between gap-2 rounded-full bg-primary text-white px-4 py-1">
+                        <Button className="text-md flex flex-row justify-between gap-2 rounded-full px-4 py-1">
                             <p className="w-auto my-auto text-sm">
-                                {"Perfect Your Form with"}
+                                {"Star us on"}
                             </p>
-                            <ArrowRight className="w-4 h-4 my-auto" />
-                        </span>
+                            <Github className="w-4 h-4 my-auto" />
+                        </Button>
                     </div>
 
-                    <div className="md:text-6xl lg:text-7xl sm:text-5xl text-4xl text-center font-bold mx-auto flex flex-col">
+                    <div className="md:text-6xl lg:text-7xl sm:text-5xl text-3xl text-center font-bold mx-auto flex flex-col">
                         Ever Tried Perfecting
                         <span>Every Rep?</span>
                     </div>
@@ -25,15 +25,15 @@ export function Main() {
                         FitTrack uses advanced pose detection to help you achieve the perfect form in your workouts. Get real-time feedback and track your progress like never before.
                     </p>
 
-                    <div className="flex flex-row justify-center gap-7 mt-6">
-                        <Button>Explore Features</Button>
-                        <Button variant={"outline"} size={"lg"}>{"Get Started"}
-                            <ArrowRight className="w-5 h-5" />
+                    <div className="flex md:flex-row flex-col justify-center md:gap-7 gap-4 mt-6">
+                        <Button size={'lg'}>Explore Features</Button>
+                        <Button variant={"outline"} className="flex flex-row gap-3" size={"lg"}>{"Get Started"}
+                            <MoveRight className="w-5 h-5" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex p-5 my-auto w-full mx-auto">
+                <div className="flex pt-5 mt-9 my-auto w-full mx-auto">
                     <img src="https://ai.google.dev/static/edge/mediapipe/images/solutions/examples/pose_detector.png" alt="" className="rounded-3xl mx-auto" />
                 </div>
 
