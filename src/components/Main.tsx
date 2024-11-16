@@ -16,7 +16,7 @@ export function Main() {
                         </Button>
                     </div>
 
-                    <div className="md:text-6xl lg:text-7xl sm:text-5xl text-3xl text-center font-bold mx-auto flex flex-col">
+                    <div className="md:text-6xl lg:text-7xl sm:text-5xl text-3xl text-center  font-semibold mx-auto flex flex-col">
                         Ever Tried Perfecting
                         <span>Every Rep?</span>
                     </div>
