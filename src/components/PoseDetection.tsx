@@ -8,11 +8,12 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle2, XCircle, Activity, Dumbbell } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 
 const MODEL_PATH = "/models/pose_landmarker_full.task"
 
 const POSE_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], [9, 10],
   [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
   [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], [11, 23],
   [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28], [27, 29],
@@ -22,53 +23,56 @@ const POSE_CONNECTIONS = [
 const EXERCISES = {
   bicepCurl: {
     name: "Bicep Curl",
-    landmarks: [12, 14, 16],
-    targetAngle: { min: 30, max: 45 }, // Standard for bicep curl contraction
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 30, max: 50 },
     range: { min: 0, max: 180 },
   },
   squat: {
     name: "Squat",
-    landmarks: [24, 26, 28],
-    targetAngle: { min: 70, max: 100 }, // Squat angle for proper depth
+    landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
+    targetAngle: { min: 70, max: 100 },
     range: { min: 0, max: 180 },
   },
   deadlift: {
     name: "Deadlift",
-    landmarks: [12, 24, 26],
-    targetAngle: { min: 10, max: 30 }, // Small angle for hip hinge in deadlift
+    landmarks: { left: [11, 23, 25], right: [12, 24, 26] },
+    targetAngle: { min: 10, max: 30 },
     range: { min: 0, max: 180 },
   },
   benchPress: {
     name: "Bench Press",
-    landmarks: [12, 14, 16],
-    targetAngle: { min: 75, max: 100 }, // Approximate arm angle in bench press
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 75, max: 100 },
     range: { min: 0, max: 180 },
   },
   lunge: {
     name: "Lunge",
-    landmarks: [24, 26, 28],
-    targetAngle: { min: 80, max: 100 }, // Angle for knee position in lunge
+    landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
+    targetAngle: { min: 80, max: 100 },
     range: { min: 0, max: 180 },
   },
   pullUp: {
     name: "Pull-up",
-    landmarks: [12, 14, 16],
-    targetAngle: { min: 70, max: 90 }, // Upper arm angle in pull-up
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 70, max: 90 },
     range: { min: 0, max: 180 },
   },
 }
 
-export default function PoseDetection() {
+export default function Component() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [poseLandmarker, setPoseLandmarker] = useState<PoseLandmarker | null>(null)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [angle, setAngle] = useState(180)
   const [selectedExercise, setSelectedExercise] = useState("bicepCurl")
+  const [selectedSide, setSelectedSide] = useState("right")
   const [repCount, setRepCount] = useState(0)
   const [isInTargetPosition, setIsInTargetPosition] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
+  const [hasLeftTargetPosition, setHasLeftTargetPosition] = useState(true)
+  let isInRange = false;
 
   useEffect(() => {
     const initializePoseLandmarker = async () => {
@@ -88,12 +92,12 @@ export default function PoseDetection() {
 
       if (videoRef.current) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
               width: { ideal: 640 },
               height: { ideal: 480 },
-              aspectRatio: 4/3 
-            } 
+              aspectRatio: 4 / 3
+            }
           })
           videoRef.current.srcObject = stream
         } catch (error) {
@@ -144,29 +148,47 @@ export default function PoseDetection() {
         if (poseResults.landmarks) {
           poseResults.landmarks.forEach((pose) => {
             const exercise = EXERCISES[selectedExercise as keyof typeof EXERCISES]
-            const [pointA, pointB, pointC] = exercise.landmarks.map(index => pose[index])
+            const [pointA, pointB, pointC] = exercise.landmarks[selectedSide].map(index => pose[index])
 
             const calculatedAngle = calculateAngle(pointA, pointB, pointC)
             setAngle(Math.round(Math.max(0, Math.min(180, calculatedAngle))))
 
+            if (calculatedAngle >= exercise.targetAngle.min && calculatedAngle <= exercise.targetAngle.max) {
+              if (!isInRange) {
+                isInRange = true
+                console.log("In range")
+                setRepCount(prev => prev + 1)
+              }
+            } else {
+              if (isInRange) {
+                isInRange = false
+                console.log("Out of range")
+              }
+            }
+
             const inTargetPosition = calculatedAngle >= exercise.targetAngle.min && calculatedAngle <= exercise.targetAngle.max
-            if (inTargetPosition && !isInTargetPosition) {
-              setRepCount(prev => prev + 1)
+
+            if (inTargetPosition && hasLeftTargetPosition) {
               setFeedback("Great job! Keep going!")
+              setHasLeftTargetPosition(false)
             } else if (!inTargetPosition) {
+              setHasLeftTargetPosition(true)
               setFeedback("Adjust your form to reach the target position.")
             }
+
             setIsInTargetPosition(inTargetPosition)
 
             pose.forEach((landmark, index) => {
-              canvasCtx.fillStyle = "red"
+              // no need to draw landmarks for index 0 to 10
+              if (index < 11) return;
+              canvasCtx.fillStyle = selectedSide === "left" ? "lightblue" : "darkgoldenrod"
               canvasCtx.beginPath()
-              canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 5, 0, 2 * Math.PI)
+              canvasCtx.arc(landmark.x * canvas.width , landmark.y * canvas.height, 8, 0, 2 * Math.PI)
               canvasCtx.fill()
 
-              canvasCtx.fillStyle = "yellow"
+              canvasCtx.fillStyle = "white"
               canvasCtx.font = "12px Arial"
-              canvasCtx.fillText(`${index}`, landmark.x * canvas.width + 6, landmark.y * canvas.height - 6)
+              canvasCtx.fillText(index.toString(), landmark.x * canvas.width, landmark.y * canvas.height)
             })
 
             const drawExerciseLine = (start: number, end: number, color: string) => {
@@ -174,7 +196,7 @@ export default function PoseDetection() {
               const endLandmark = pose[end]
               if (startLandmark && endLandmark) {
                 canvasCtx.strokeStyle = color
-                canvasCtx.lineWidth = 4
+                canvasCtx.lineWidth = 8 // Increased line width for bolder lines
                 canvasCtx.beginPath()
                 canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height)
                 canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height)
@@ -183,20 +205,21 @@ export default function PoseDetection() {
             }
 
             const getLineColor = (angle: number) => {
-              if (angle < exercise.targetAngle.min || angle > exercise.targetAngle.max) return "blue"
-              return "green"
+              if (angle < exercise.targetAngle.min || angle > exercise.targetAngle.max) return "darkgoldenrod"
+              return "lightgreen";
             }
 
-            drawExerciseLine(exercise.landmarks[0], exercise.landmarks[1], getLineColor(calculatedAngle))
-            drawExerciseLine(exercise.landmarks[1], exercise.landmarks[2], getLineColor(calculatedAngle))
+            const exerciseLandmarks = exercise.landmarks[selectedSide]
+            drawExerciseLine(exerciseLandmarks[0], exerciseLandmarks[1], getLineColor(calculatedAngle))
+            drawExerciseLine(exerciseLandmarks[1], exerciseLandmarks[2], getLineColor(calculatedAngle))
 
             POSE_CONNECTIONS.forEach(([start, end]) => {
-              if (!exercise.landmarks.includes(start) || !exercise.landmarks.includes(end)) {
+              if (!exerciseLandmarks.includes(start) || !exerciseLandmarks.includes(end)) {
                 const startLandmark = pose[start]
                 const endLandmark = pose[end]
                 if (startLandmark && endLandmark) {
-                  canvasCtx.strokeStyle = "white"
-                  canvasCtx.lineWidth = 2
+                  canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.5)" // Semi-transparent white for other connections
+                  canvasCtx.lineWidth = 6 // Thinner lines for non-exercise connections
                   canvasCtx.beginPath()
                   canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height)
                   canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height)
@@ -212,6 +235,7 @@ export default function PoseDetection() {
     requestAnimationFrame(handleVideoFrame)
   }
 
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.onloadedmetadata = () => {
@@ -224,7 +248,7 @@ export default function PoseDetection() {
     if (isVideoReady && poseLandmarker) {
       requestAnimationFrame(handleVideoFrame)
     }
-  }, [isVideoReady, poseLandmarker, selectedExercise, isDetecting])
+  }, [isVideoReady, poseLandmarker, selectedExercise, selectedSide, isDetecting])
 
   const getProgressColor = () => {
     const exercise = EXERCISES[selectedExercise as keyof typeof EXERCISES]
@@ -234,7 +258,7 @@ export default function PoseDetection() {
   }
 
   return (
-    <div className="mx-auto px-4 py-8 bg-gray-100 min-h-screen">
+    <div className="mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Detection</h1>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2">
@@ -246,7 +270,7 @@ export default function PoseDetection() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="relative aspect-video">
+              <div className="relative aspect-auto">
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
@@ -270,7 +294,7 @@ export default function PoseDetection() {
                 Exercise Selection
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
               <Select onValueChange={setSelectedExercise} defaultValue={selectedExercise}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select an exercise" />
@@ -281,6 +305,19 @@ export default function PoseDetection() {
                   ))}
                 </SelectContent>
               </Select>
+              <div className="space-y-2">
+                <Label>Side</Label>
+                <RadioGroup defaultValue={selectedSide} onValueChange={setSelectedSide} className="flex space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="left" id="left" />
+                    <Label htmlFor="left">Left</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="right" id="right" />
+                    <Label htmlFor="right">Right</Label>
+                  </div>
+                </RadioGroup>
+              </div>
             </CardContent>
           </Card>
           <Card className="shadow-lg">
@@ -319,7 +356,7 @@ export default function PoseDetection() {
                 </AlertTitle>
                 <AlertDescription>{feedback}</AlertDescription>
               </Alert>
-              <Button 
+              <Button
                 className={`w-full ${isDetecting ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
                 onClick={() => setIsDetecting(!isDetecting)}
               >
