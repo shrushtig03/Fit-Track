@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { HeartPulse } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function SignUpMain() {
@@ -16,8 +17,11 @@ export function SignUpMain() {
     const [username, setUsername] = useState("");
     const [age, setAge] = useState(0);
     const [gender, setGender] = useState("");
+    const [error, setError] = useState<string | null | undefined>(null);
+    const router = useRouter();
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         console.log(email, password, username, age, gender);
 
         const result = await signIn("credentials", {
@@ -26,13 +30,23 @@ export function SignUpMain() {
             username,
             age,
             gender,
-            redirect: true,
+            redirect: false,
             callbackUrl: "/",
         });
 
         if (!result?.ok) {
             console.error("Error signing up:", result?.error);
+            setError(result?.error);
+            return;
+        } else {
+            console.log("Signed up successfully");
+            router.push("/");
         }
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        setAge(0);
+        setGender("");
     };
 
 
@@ -52,7 +66,7 @@ export function SignUpMain() {
                 <div className="flex flex-col items-center text-center mx-auto my-6">
                     <div className="flex flex-row gap-3">
                         <HeartPulse className="w-10 h-10" />
-                        <h1 className="text-5xl font-bold">FitTrack AI</h1>
+                        <h1 className="text-5xl font-bold">FitTrack</h1>
                     </div>
                     <p className="mx-auto text-base mt-2 text-primary/50 font-medium text-center">
                         Get real-time feedback and track your progress like never before.
@@ -113,6 +127,7 @@ export function SignUpMain() {
                     </CardContent>
                     <CardFooter className="flex justify-center flex-col">
                         <Button onClick={handleSubmit}>Sign Up</Button>
+                        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                         <p className="mx-auto text-base mt-2 text-primary/50 font-medium text-center">
                             {"Don't have an account? "}
                             <Link className="font-bold underline" href={"/signup"}>Sign In</Link>
