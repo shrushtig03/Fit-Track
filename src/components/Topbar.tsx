@@ -1,9 +1,12 @@
+"use client"
+
 import {  HeartPulse, LogIn } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { ThemeToggle } from "./ThemeChangerButton";
+import { useRouter } from "next/navigation";
 
 export default function TopBar() {
+  const router = useRouter();
   return (
     <header className="w-full">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -34,13 +37,12 @@ export default function TopBar() {
             >
               Contact
             </Link>
-            <Button variant={'outline'} className="flex flex-row gap-2">
+            <Button variant={'outline'} className="flex flex-row gap-2" onClick = {() => router.push('/login')}>
               <div className="my-auto">
                 SignIn
               </div>
               <LogIn className="w-5 h-5 my-auto hidden md:flex" />
             </Button>
-            <ThemeToggle/>
           </nav>
 
         </div>
