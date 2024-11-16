@@ -1,62 +1,83 @@
-import CredentialsProvider from "next-auth/providers/credentials"
+import CredentialsProvider from "next-auth/providers/credentials";
+import prisma from "./db";
 
 export const NEXTAUTH_CONFIG = {
-    providers: [    
-        CredentialsProvider({
-            name: "Credential",
-            credentials: {
-                username: { label: "Username", type: "text", placeholder: "jsmith" },
-                password: { label: "Password", type: "password" }
-            },
-            async authorize(credentials) {
+  providers: [
+    CredentialsProvider({
+      name: "Credential",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "jsmith@gmail.com" },
+        password: { label: "Password", type: "password" },
+        username: { label: "Username", type: "text" },
+        age: { label: "Age", type: "number" },
+        gender: { label: "Gender", type: "text" },
+      },
 
-                console.log("Credentials Provider", credentials);
-                if (!credentials) return null;
-                const { username, password } = credentials;
+      async authorize(credentials) {
+        if (!credentials) return null;
+        const { email, password, username, age, gender } = credentials;
+        console.log("credentials: ", credentials);
 
+        // Check if the user exists
+        const user = await prisma.user.findFirst({
+          where: { email },
+        });
 
-                return {
-                    username,
-                    password
-                };
+        // If user exists, verify password
+        if (user) {
+          if (user.password !== password) {
+            throw new Error("Invalid credentials.");
+          }
+          return {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+          };
+        }
+        if (!username || !gender) {
+          throw new Error("User not found. Please sign up.");
+        }
 
-            },
-        })
-    ],
-    secret: process.env.NEXTAUTH_SECRET,
+        const newUser = await prisma.user.create({
+          data: {
+            email,
+            password, // Hash in production
+            username,
+            age: parseInt(age, 10),
+            gender,
+          },
+        });
 
-    callbacks: {
-        async signIn({ user, account, profile }: any) {
-            return true;
-        },
+        return {
+          id: newUser.id,
+          email: newUser.email,
+          username: newUser.username,
+        };
+      },
+    }),
+  ],
 
-        async jwt({ token, account, user }: any) {
-            // console.log("JWT", token, account);
-            if (account) {
-                token.accessToken = account.access_token;
+  secret: process.env.NEXTAUTH_SECRET,
 
-                if (user) {
-                    token.userId = user.id;
-                    token.web3Address = user.web3Address;
-                }
-            }
-            // console.log("jwt", token, account);
+  callbacks: {
+    async signIn({ user }) {
+      return !!user;
+    },
 
-            return token;
-        },
+    async jwt({ token, user }) {
+      if (user) {
+        token.userId = user.id;
+        token.username = user.username;
+        token.email = user.email;
+      }
+      return token;
+    },
 
-        async session({ session, token }: any) {
-            session.userId = token.userId;
-            session.web3Address = token.web3Address;
-            // console.log("session", session, token);
-
-            return session;
-        },
-
-        async redirect({ url, baseUrl }: any) {
-            // console.log("redirect", url, baseUrl);
-            return baseUrl;
-        },
-
-    }
-}
+    async session({ session, token }) {
+      session.userId = token.userId;
+      session.username = token.username;
+      session.email = token.email;
+      return session;
+    },
+  },
+};
