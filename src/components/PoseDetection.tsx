@@ -339,7 +339,7 @@ export default function Component() {
 
   return (
     <div className="mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Bhanda</h1>
+      <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Detection</h1>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2">
           <Card className="w-full shadow-lg">
