@@ -27,7 +27,7 @@ export default function TopBar() {
             >
               Dashboard
             </Link>
-            <Link
+            {/* <Link
               className="hidden md:flex text-sm font-medium hover:underline underline-offset-4"
               href="/#features"
             >
@@ -38,7 +38,7 @@ export default function TopBar() {
               href="/contact"
             >
               Contact
-            </Link>
+            </Link> */}
             {
               data ? (
                 <Button variant={'outline'} className="flex flex-row gap-2" onClick={() => signOut()}>

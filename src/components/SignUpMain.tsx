@@ -55,7 +55,7 @@ export function SignUpMain() {
             {/* Left Side - Image */}
             <div className="items-center justify-center w-1/2 h-full hidden md:flex">
                 <img
-                    src="https://ai.google.dev/static/edge/mediapipe/images/solutions/examples/pose_detector.png"
+                    src="https://ideogram.ai/assets/image/lossless/response/y7iiTw-fTHuSEyeEBwZAYA"
                     alt="Pose Detector"
                     className="h-full w-auto object-cover"
                 />
@@ -130,7 +130,7 @@ export function SignUpMain() {
                         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                         <p className="mx-auto text-base mt-2 text-primary/50 font-medium text-center">
                             {"Don't have an account? "}
-                            <Link className="font-bold underline" href={"/signup"}>Sign In</Link>
+                            <Link className="font-bold underline" href={"/login"}>Sign In</Link>
                         </p>
                     </CardFooter>
                 </Card>

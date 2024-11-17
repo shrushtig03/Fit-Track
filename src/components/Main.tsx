@@ -1,19 +1,26 @@
+"use client"
+
 import { Github, MoveRight } from "lucide-react";
 import { Button } from "./ui/button";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function Main() {
+    const router = useRouter();
     return <>
         <div className="flex flex-col container mt-3 mx-auto my-9">
             <div className="flex flex-col justify-between md:m-7">
 
                 <div className="flex md:p-5 my-auto flex-col w-full gap-3">
                     <div className="flex justify-center">
-                        <Button className="text-md flex flex-row justify-between gap-2 rounded-full px-4 py-1">
-                            <p className="w-auto my-auto text-sm">
-                                {"Star us on"}
-                            </p>
-                            <Github className="w-4 h-4 my-auto" />
-                        </Button>
+                        <Link href="https://github.com/tsahil01/pose-detection" target="_blank">
+                            <Button className="text-md flex flex-row justify-between gap-2 rounded-full px-4 py-1">
+                                <p className="w-auto my-auto text-sm">
+                                    {"Star us on"}
+                                </p>
+                                <Github className="w-4 h-4 my-auto" />
+                            </Button>
+                        </Link>
                     </div>
 
                     <div className="md:text-6xl lg:text-7xl sm:text-5xl text-3xl text-center  font-semibold mx-auto flex flex-col">
@@ -26,8 +33,12 @@ export function Main() {
                     </p>
 
                     <div className="flex md:flex-row flex-col justify-center md:gap-7 gap-4 mt-6">
-                        <Button size={'lg'}>Explore Features</Button>
-                        <Button variant={"outline"} className="flex flex-row gap-3" size={"lg"}>{"Get Started"}
+                        {/* <Button size={'lg'}>Explore Features</Button> */}
+                        <Button className="flex flex-row gap-3" size={"lg"}
+                            onClick={() => {
+                                router.push("/dashboard");
+                            }}
+                        >{"Get Started"}
                             <MoveRight className="w-5 h-5" />
                         </Button>
                     </div>
