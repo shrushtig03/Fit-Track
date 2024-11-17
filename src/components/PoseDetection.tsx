@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle2, XCircle, Activity, Dumbbell } from 'lucide-react'
+import { CheckCircle2, XCircle, Activity, Dumbbell, Clock, RotateCcw } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 
 const MODEL_PATH = "/models/pose_landmarker_full.task"
 
@@ -79,7 +80,19 @@ export default function Component() {
   const [feedback, setFeedback] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
   const [hasLeftTargetPosition, setHasLeftTargetPosition] = useState(true)
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [showReport, setShowReport] = useState(false)
+  const [report, setReport] = useState<{
+    exercise: string;
+    side: string;
+    reps: number;
+    duration: string;
+    averageAngle: number;
+  } | null>(null)
   let isInRange = false;
+  let angleSum = 0;
+  let angleCount = 0;
 
   useEffect(() => {
     const initializePoseLandmarker = async () => {
@@ -164,6 +177,10 @@ export default function Component() {
             const calculatedAngle = calculateAngle(pointA, pointB, pointC)
             setAngle(Math.round(Math.max(0, Math.min(180, calculatedAngle))))
 
+            // Update angle sum and count for average calculation
+            angleSum += calculatedAngle
+            angleCount++
+
             if (calculatedAngle >= exercise.targetAngle.min && calculatedAngle <= exercise.targetAngle.max) {
               if (!isInRange) {
                 isInRange = true
@@ -196,11 +213,18 @@ export default function Component() {
               canvasCtx.beginPath()
               canvasCtx.arc(landmark.x * canvas.width , landmark.y * canvas.height, 8, 0, 2 * Math.PI)
               canvasCtx.fill()
-
-              canvasCtx.fillStyle = "white"
-              canvasCtx.font = "12px Arial bold"
-              canvasCtx.fillText(index.toString(), landmark.x * canvas.width, landmark.y * canvas.height - 10)
             })
+
+            // Draw angle at the middle point (pointB)
+            const middlePointIndex = exercise.landmarks[selectedSide][1]
+            const middlePoint = pose[middlePointIndex]
+            canvasCtx.fillStyle = "white"
+            canvasCtx.font = "bold 16px Arial"
+            canvasCtx.fillText(
+              `${Math.round(calculatedAngle)}°`,
+              middlePoint.x * canvas.width,
+              middlePoint.y * canvas.height - 20
+            )
 
             const drawExerciseLine = (start: number, end: number, color: string) => {
               const startLandmark = pose[start]
@@ -246,7 +270,6 @@ export default function Component() {
     requestAnimationFrame(handleVideoFrame)
   }
 
-
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.onloadedmetadata = () => {
@@ -261,6 +284,16 @@ export default function Component() {
     }
   }, [isVideoReady, poseLandmarker, selectedExercise, selectedSide, isDetecting])
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isDetecting && startTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000))
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [isDetecting, startTime])
+
   const getProgressColor = () => {
     const exercise = EXERCISES[selectedExercise as keyof typeof EXERCISES]
     if (angle < exercise.targetAngle.min) return "bg-blue-500"
@@ -268,9 +301,45 @@ export default function Component() {
     return "bg-green-500"
   }
 
+  const handleDetectionToggle = () => {
+    if (!isDetecting) {
+      setStartTime(Date.now())
+      setElapsedTime(0)
+      setRepCount(0)
+      angleSum = 0
+      angleCount = 0
+      setIsDetecting(true)
+    } else {
+      setIsDetecting(false)
+      const averageAngle = angleCount > 0 ? angleSum / angleCount : 0
+      setReport({
+        exercise: EXERCISES[selectedExercise as keyof typeof EXERCISES].name,
+        side: selectedSide,
+        reps: repCount,
+        duration: formatTime(elapsedTime),
+        averageAngle: Math.round(averageAngle),
+      })
+      setShowReport(true)
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  const resetSession = () => {
+    setRepCount(0)
+    setElapsedTime(0)
+    setStartTime(null)
+    setReport(null)
+    setShowReport(false)
+  }
+
   return (
     <div className="mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Detection</h1>
+      <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Bhanda</h1>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2">
           <Card className="w-full shadow-lg">
@@ -356,6 +425,10 @@ export default function Component() {
                 <span className="font-semibold">Repetition Count:</span>
                 <span className="text-2xl font-bold text-primary">{repCount}</span>
               </div>
+              <div className="flex justify-between items-center bg-muted p-3 rounded-md">
+                <span className="font-semibold">Elapsed Time:</span>
+                <span className="text-2xl font-bold text-primary">{formatTime(elapsedTime)}</span>
+              </div>
               <Alert variant={isInTargetPosition ? "default" : "destructive"} className="mt-4">
                 <AlertTitle className="flex items-center gap-2">
                   {isInTargetPosition ? (
@@ -367,16 +440,60 @@ export default function Component() {
                 </AlertTitle>
                 <AlertDescription>{feedback}</AlertDescription>
               </Alert>
-              <Button
-                className={`w-full ${isDetecting ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                onClick={() => setIsDetecting(!isDetecting)}
-              >
-                {isDetecting ? 'Stop Detection' : 'Start Detection'}
-              </Button>
+              <div className="flex gap-4">
+                <Button
+                  className={`flex-1 ${isDetecting ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                  onClick={handleDetectionToggle}
+                >
+                  {isDetecting ? 'Stop Detection' : 'Start Detection'}
+                </Button>
+                <Button
+                  className="flex-1 bg-gray-500 hover:bg-gray-600"
+                  onClick={resetSession}
+                  disabled={isDetecting}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Exercise Report</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="font-semibold">Exercise:</span>
+                <span>{report?.exercise}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold">Side:</span>
+                <span>{report?.side}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold">Total Repetitions:</span>
+                <span>{report?.reps}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold">Duration:</span>
+                <span>{report?.duration}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold">Average Angle:</span>
+                <span>{report?.averageAngle}°</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowReport(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
