@@ -192,14 +192,14 @@ export default function Component() {
             pose.forEach((landmark, index) => {
               // no need to draw landmarks for index 0 to 10
               if (index < 11) return;
-              canvasCtx.fillStyle = selectedSide === "left" ? "lightblue" : "darkgoldenrod"
+              canvasCtx.fillStyle = "darkgoldenrod"
               canvasCtx.beginPath()
               canvasCtx.arc(landmark.x * canvas.width , landmark.y * canvas.height, 8, 0, 2 * Math.PI)
               canvasCtx.fill()
 
               canvasCtx.fillStyle = "white"
-              canvasCtx.font = "12px Arial"
-              canvasCtx.fillText(index.toString(), landmark.x * canvas.width, landmark.y * canvas.height)
+              canvasCtx.font = "12px Arial bold"
+              canvasCtx.fillText(index.toString(), landmark.x * canvas.width, landmark.y * canvas.height - 10)
             })
 
             const drawExerciseLine = (start: number, end: number, color: string) => {
