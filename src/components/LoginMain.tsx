@@ -44,7 +44,7 @@ export function LoginMain() {
             {/* Left Side - Image */}
             <div className="items-center justify-center w-1/2 h-full hidden md:flex">
                 <img
-                    src="https://ai.google.dev/static/edge/mediapipe/images/solutions/examples/pose_detector.png"
+                    src="https://ideogram.ai/assets/progressive-image/balanced/response/-JryY0P6S7yXv5Q6cWB00Q"
                     alt="Pose Detector"
                     className="h-full w-auto object-cover"
                 />

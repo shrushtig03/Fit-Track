@@ -14,11 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 
 const MODEL_PATH = "/models/pose_landmarker_full.task"
 
-interface point{
+interface point {
   x: number;
   y: number;
   z: number;
-  visibility: number; 
+  visibility: number;
 }
 
 const POSE_CONNECTIONS = [
@@ -38,34 +38,96 @@ const EXERCISES = {
   squat: {
     name: "Squat",
     landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
-    targetAngle: { min: 70, max: 100 },
+    targetAngle: { min: 50, max: 70 },
     range: { min: 0, max: 180 },
   },
   deadlift: {
     name: "Deadlift",
     landmarks: { left: [11, 23, 25], right: [12, 24, 26] },
-    targetAngle: { min: 10, max: 45 },
+    targetAngle: { min: 85, max: 95 },
     range: { min: 0, max: 180 },
   },
   benchPress: {
     name: "Bench Press",
     landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
-    targetAngle: { min: 75, max: 100 },
+    targetAngle: { min: 70, max: 85 },
     range: { min: 0, max: 180 },
   },
   lunge: {
     name: "Lunge",
     landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
-    targetAngle: { min: 80, max: 100 },
+    targetAngle: { min: 60, max: 70 },
     range: { min: 0, max: 180 },
   },
-  pullUp: {
-    name: "Pull-up",
+  chinUp: {
+    name: "Chin-up",
     landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
-    targetAngle: { min: 70, max: 90 },
+    targetAngle: { min: 40, max: 50 },
     range: { min: 0, max: 180 },
   },
-}
+  tricepsDips: {
+    name: "Triceps Dips",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 60, max: 75 },
+    range: { min: 0, max: 180 },
+  },
+  overheadExtensions: {
+    name: "Overhead Extensions",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 40, max: 55 },
+    range: { min: 0, max: 180 },
+  },
+  tricepsDumbbellExtension: {
+    name: "Triceps Dumbbell Extension",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 55, max: 65 },
+    range: { min: 0, max: 180 },
+  },
+  overheadCableTricepsExtensions: {
+    name: "Overhead Cable Triceps Extensions",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 50, max: 60 },
+    range: { min: 0, max: 180 },
+  },
+  overheadShoulderPress: {
+    name: "Overhead Shoulder Press",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 55, max: 65 },
+    range: { min: 0, max: 180 },
+  },
+  lateralRaises: {
+    name: "Lateral Raises",
+    landmarks: { left: [13, 11, 23], right: [14, 12, 24] },
+    targetAngle: { min: 90, max: 100 },
+    range: { min: 0, max: 180 },
+  },
+
+  legRaises: {
+    name: "Leg Raises",
+    landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
+    targetAngle: { min: 85, max: 90 },
+    range: { min: 0, max: 180 },
+  },
+  legPresses: {
+    name: "Leg Press",
+    landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
+    targetAngle: { min: 80, max: 90 },
+    range: { min: 0, max: 180 },
+  },
+  hangingLegRaises: {
+    name: "Hanging Leg Raises",
+    landmarks: { left: [23, 25, 27], right: [24, 26, 28] },
+    targetAngle: { min: 75, max: 90 },
+    range: { min: 0, max: 180 },
+  },
+  barbellCurls: {
+    name: "Barbell Curls",
+    landmarks: { left: [11, 13, 15], right: [12, 14, 16] },
+    targetAngle: { min: 55, max: 65 },
+    range: { min: 0, max: 180 },
+  },
+};
+
 
 export default function Component() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -137,7 +199,7 @@ export default function Component() {
   }, [])
 
   const calculateAngle = (pointA: point, pointB: point, pointC: point) => {
-    if(pointA.visibility < 0.5 || pointB.visibility < 0.5 || pointC.visibility < 0.5) {
+    if (pointA.visibility < 0.5 || pointB.visibility < 0.5 || pointC.visibility < 0.5) {
       setFeedback("Not all points are visible")
       return 0;
     };
@@ -151,7 +213,7 @@ export default function Component() {
     const magnitudeBC = Math.sqrt(BCx * BCx + BCy * BCy)
 
     const angleRad = Math.acos(dotProduct / (magnitudeAB * magnitudeBC))
-    return (angleRad * 180) / Math.PI 
+    return (angleRad * 180) / Math.PI
   }
 
   const handleVideoFrame = async () => {
@@ -211,7 +273,7 @@ export default function Component() {
               if (index < 11) return;
               canvasCtx.fillStyle = "darkgoldenrod"
               canvasCtx.beginPath()
-              canvasCtx.arc(landmark.x * canvas.width , landmark.y * canvas.height, 8, 0, 2 * Math.PI)
+              canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 8, 0, 2 * Math.PI)
               canvasCtx.fill()
             })
 
@@ -341,7 +403,7 @@ export default function Component() {
     <div className="mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-6 text-center text-primary">Multi-Exercise Pose Detection</h1>
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-1/2">
+        <div className="w-full lg:w-1/2 flex flex-col gap-3">
           <Card className="w-full shadow-lg">
             <CardHeader className="bg-primary text-primary-foreground">
               <CardTitle className="flex items-center gap-2">
@@ -365,8 +427,6 @@ export default function Component() {
               </div>
             </CardContent>
           </Card>
-        </div>
-        <div className="w-full lg:w-1/2 space-y-6">
           <Card className="shadow-lg">
             <CardHeader className="bg-secondary text-secondary-foreground">
               <CardTitle className="flex items-center gap-2">
@@ -400,6 +460,9 @@ export default function Component() {
               </div>
             </CardContent>
           </Card>
+        </div>
+        <div className="w-full lg:w-1/2 space-y-6">
+
           <Card className="shadow-lg">
             <CardHeader className="bg-accent text-accent-foreground">
               <CardTitle>{EXERCISES[selectedExercise as keyof typeof EXERCISES].name} Analysis</CardTitle>
