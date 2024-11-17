@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label"
 
 const MODEL_PATH = "/models/pose_landmarker_full.task"
 
+interface point{
+  x: number;
+  y: number;
+  z: number;
+  visibility: number; 
+}
+
 const POSE_CONNECTIONS = [
   [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
   [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], [11, 23],
@@ -36,7 +43,7 @@ const EXERCISES = {
   deadlift: {
     name: "Deadlift",
     landmarks: { left: [11, 23, 25], right: [12, 24, 26] },
-    targetAngle: { min: 10, max: 30 },
+    targetAngle: { min: 10, max: 45 },
     range: { min: 0, max: 180 },
   },
   benchPress: {
@@ -116,7 +123,11 @@ export default function Component() {
     }
   }, [])
 
-  const calculateAngle = (pointA: any, pointB: any, pointC: any) => {
+  const calculateAngle = (pointA: point, pointB: point, pointC: point) => {
+    if(pointA.visibility < 0.5 || pointB.visibility < 0.5 || pointC.visibility < 0.5) {
+      setFeedback("Not all points are visible")
+      return 0;
+    };
     const ABx = pointA.x - pointB.x
     const ABy = pointA.y - pointB.y
     const BCx = pointC.x - pointB.x
@@ -127,7 +138,7 @@ export default function Component() {
     const magnitudeBC = Math.sqrt(BCx * BCx + BCy * BCy)
 
     const angleRad = Math.acos(dotProduct / (magnitudeAB * magnitudeBC))
-    return (angleRad * 180) / Math.PI
+    return (angleRad * 180) / Math.PI 
   }
 
   const handleVideoFrame = async () => {
