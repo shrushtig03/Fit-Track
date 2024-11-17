@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle2, XCircle, Activity, Dumbbell, Clock, RotateCcw } from 'lucide-react'
+import { CheckCircle2, XCircle, Activity, Dumbbell, RotateCcw } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 const MODEL_PATH = "/models/pose_landmarker_full.task"
 
@@ -234,7 +234,7 @@ export default function Component() {
         if (poseResults.landmarks) {
           poseResults.landmarks.forEach((pose) => {
             const exercise = EXERCISES[selectedExercise as keyof typeof EXERCISES]
-            const [pointA, pointB, pointC] = exercise.landmarks[selectedSide].map(index => pose[index])
+            const [pointA, pointB, pointC] = exercise.landmarks[selectedSide as "left" | "right"].map(index => pose[index])
 
             const calculatedAngle = calculateAngle(pointA, pointB, pointC)
             setAngle(Math.round(Math.max(0, Math.min(180, calculatedAngle))))
@@ -278,7 +278,7 @@ export default function Component() {
             })
 
             // Draw angle at the middle point (pointB)
-            const middlePointIndex = exercise.landmarks[selectedSide][1]
+            const middlePointIndex = exercise.landmarks[selectedSide as "left" | "right"][1]
             const middlePoint = pose[middlePointIndex]
             canvasCtx.fillStyle = "white"
             canvasCtx.font = "bold 16px Arial"
@@ -306,7 +306,7 @@ export default function Component() {
               return "lightgreen";
             }
 
-            const exerciseLandmarks = exercise.landmarks[selectedSide]
+            const exerciseLandmarks = exercise.landmarks[selectedSide as "left" | "right"]
             drawExerciseLine(exerciseLandmarks[0], exerciseLandmarks[1], getLineColor(calculatedAngle))
             drawExerciseLine(exerciseLandmarks[1], exerciseLandmarks[2], getLineColor(calculatedAngle))
 
@@ -344,7 +344,7 @@ export default function Component() {
     if (isVideoReady && poseLandmarker) {
       requestAnimationFrame(handleVideoFrame)
     }
-  }, [isVideoReady, poseLandmarker, selectedExercise, selectedSide, isDetecting])
+  }, [isVideoReady, poseLandmarker, selectedExercise, selectedSide, isDetecting, handleVideoFrame])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -427,6 +427,9 @@ export default function Component() {
               </div>
             </CardContent>
           </Card>
+
+        </div>
+        <div className="w-full lg:w-1/2 space-y-6">
           <Card className="shadow-lg">
             <CardHeader className="bg-secondary text-secondary-foreground">
               <CardTitle className="flex items-center gap-2">
@@ -460,8 +463,6 @@ export default function Component() {
               </div>
             </CardContent>
           </Card>
-        </div>
-        <div className="w-full lg:w-1/2 space-y-6">
 
           <Card className="shadow-lg">
             <CardHeader className="bg-accent text-accent-foreground">

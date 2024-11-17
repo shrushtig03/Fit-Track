@@ -60,11 +60,11 @@ export const NEXTAUTH_CONFIG = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user }: { user: any }) {
       return !!user;
     },
 
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.userId = user.id;
         token.username = user.username;
@@ -73,7 +73,7 @@ export const NEXTAUTH_CONFIG = {
       return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       session.userId = token.userId;
       session.username = token.username;
       session.email = token.email;
