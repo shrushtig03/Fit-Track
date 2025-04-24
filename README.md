@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+A computer vision-based workout tracking system using MediaPipe and OpenCV, providing real-time pose detection, form evaluation, and personalized feedback for fitness enthusiasts.
 
 ## Getting Started
 
